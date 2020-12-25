@@ -168,8 +168,6 @@ exports.DeletebyIDcate = (idcate)=> {
 };
 
 exports.update = (req, res, next) => {
-  console.log("22222222222"),
-
   Product.findByIdAndUpdate(req.params.productId, {
         $set: req.body
     }, {new: true})

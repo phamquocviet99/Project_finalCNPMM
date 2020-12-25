@@ -9,6 +9,9 @@ router.get('/',userrouter.findAll);
 router.get('/:userId',userrouter.findOne);
 router.post('/',userrouter.signup);
 router.delete("/:userId",userrouter.remove);
+router.post('/login',userrouter.login);
+router.put("/:userId",userrouter.update);
+
 
 module.exports=router;
 

@@ -1,8 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-
+const jwt = require("jsonwebtoken");
 const User = require('../models/user');
+const { json } = require("body-parser");
+const JWT_KEY ="secret";
 
 exports.findAll = (req,res, next)=>{
      User.find()
@@ -17,7 +19,7 @@ exports.findAll = (req,res, next)=>{
             lName:doc.lName,
             email:doc.email,
             gender:doc.gender,
-            birthdate:doc.birthdate,
+            birthday:doc.birthday,
             phone:doc.phone,
             isAdmin:doc.isAdmin,
             iscConfirm : doc.iscConfirm,
@@ -44,6 +46,8 @@ exports.findAll = (req,res, next)=>{
       });
     });
 };
+
+
 exports.findOne =(req,res,next) => {
     const id = req.params.userId;
    User.findById(id)
@@ -52,7 +56,16 @@ exports.findOne =(req,res,next) => {
        console.log("From database", doc);
        if (doc) {
          res.status(200).json({
-             user: doc,
+          _id:doc._id,
+          fName:doc.fName,
+          lName:doc.lName,
+          email:doc.email,
+          gender:doc.gender,
+          birthday:doc.birthday,
+          phone:doc.phone,
+          isAdmin:doc.isAdmin,
+          iscConfirm : doc.iscConfirm,
+          isLock: doc.isLock,
              request: {
                  type: 'GET',
                  url: 'http://localhost:2000/users'
@@ -69,6 +82,9 @@ exports.findOne =(req,res,next) => {
        res.status(500).json({ error: err });
      });
 };
+
+
+
 exports.remove = (req, res, next) => {
     const id = req.params.userId;
         User.remove({ _id: id })
@@ -91,6 +107,8 @@ exports.remove = (req, res, next) => {
           });
     };
   
+
+
 exports.signup = (req, res, next) => {
 bcrypt.hash(req.body.password, 10).then(
     (hash) => {
@@ -167,3 +185,51 @@ exports.update = (req, res, next) => {
           });
       });
     };
+
+
+
+
+exports.login = (req, res, next) => {
+  User.find({ email: req.body.email })
+      .exec()
+      .then(user => {
+        if(user.length < 1){
+          return res.status(401).json({
+            message: 'auth failed'
+          });
+        }
+        bcrypt.compare(req.body.password, user[0].password, (err, result)=>{
+          console.log(req.body)
+          if(err){
+            return res.status(401).json({
+              message: 'auth failed'
+            });
+          }
+          if (result){
+
+            const token = jwt.sign({
+              email: user[0].email,
+              userId: user[0]._id,
+              isAdmin: user[0].isAdmin,
+              isLock: user[0].isLock
+            },JWT_KEY,{
+              expiresIn: "1h"
+            }
+            );
+               return res.status(200).json({
+              message: 'auth successful',
+              token: token
+            });
+          }else{
+          res.status(401).json({
+            message: 'auth failed'
+          });}
+        })
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).json({
+          error: err
+        });
+      });
+};
